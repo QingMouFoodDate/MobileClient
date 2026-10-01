@@ -1,8 +1,8 @@
-# QingMouCollection · 轻眸识刻采集客户端
+# MobileClient · 轻眸识刻采集客户端
 
 > 去现场把数据拍回来，顺便在手机上当场看看模型到底行不行。
 
-本仓是 [轻眸识刻](https://github.com/QingMouFoodDate/ProjectDocs) 的 **React Native 客户端**。
+本仓是 [轻眸识刻](https://github.com/QingMouFoodDate/ProjectPRD) 的 **React Native 客户端**。
 它是整个项目里**唯一一个会被带到现场去的软件**。
 
 ---
@@ -47,7 +47,7 @@
 
 所以这个客户端不只是采集工具，也是**模型的第一个真实试炼场**：模型训好 → 下发到手机 → 现场拍几张 → 当场看到框在哪、准不准。这条反馈回路越短，模型迭代越快。
 
-> 面向普通消费者的 C 端小程序在另一个仓：[QingMouMiniProgram](https://github.com/QingMouFoodDate/QingMouMiniProgram)。
+> 面向普通消费者的 C 端小程序在另一个仓：[WxClient](https://github.com/QingMouFoodDate/WxClient)。
 
 ---
 
@@ -55,7 +55,7 @@
 
 ```mermaid
 flowchart LR
-    RN["本仓：RN 客户端"] -->|"① 上传采集数据<br/>分片 + 断点续传 + 离线队列"| API["QingMouInfer<br/>平台后端"]
+    RN["本仓：RN 客户端"] -->|"① 上传采集数据<br/>分片 + 断点续传 + 离线队列"| API["TrainPlatform<br/>平台后端"]
     API -->|"② 下发模型清单<br/>+ 预签名 URL"| RN
     RN -->|"③ 端侧推理<br/>本地出框，验证模型"| RN
     RN -.->|"④ 错例回传"| API
@@ -82,7 +82,7 @@ flowchart LR
 
 - ❌ 大批量标注 —— 在手机上画几百个框不现实，回 Web 控制台做
 - ❌ 任何训练相关能力
-- ❌ C 端消费者功能 —— 那是 QingMouMiniProgram 的事
+- ❌ C 端消费者功能 —— 那是 WxClient 的事
 
 ---
 
@@ -117,7 +117,7 @@ flowchart LR
 ## 规划目录结构
 
 ```text
-QingMouCollection/
+MobileClient/
 ├── src/
 │   ├── screens/
 │   │   ├── Capture/         # 拍摄（含引导叠加）
@@ -131,7 +131,7 @@ QingMouCollection/
 │   │   └── metadata/        # EXIF / GPS / 设备信息
 │   ├── db/                  # op-sqlite schema 与迁移
 │   ├── api/                 # 平台 API 客户端
-│   └── contracts/           # 与 QingMouInfer 共享的接口类型定义
+│   └── contracts/           # 与 TrainPlatform 共享的接口类型定义
 ├── ios/  android/
 └── README.md
 ```
@@ -142,9 +142,9 @@ QingMouCollection/
 
 | 契约 | 权威定义 | 本仓职责 |
 | :--- | :--- | :--- |
-| **上传链路** | [QingMouInfer](https://github.com/QingMouFoodDate/QingMouInfer)（`UploadSession` / `UploadChunk` / `ManagedFile`） | 只实现客户端，不自造协议 |
+| **上传链路** | [TrainPlatform](https://github.com/QingMouFoodDate/TrainPlatform)（`UploadSession` / `UploadChunk` / `ManagedFile`） | 只实现客户端，不自造协议 |
 | **幂等** | 平台侧 `(size, sha256)` 去重 | 客户端可安全重传，无需自己判重 |
-| **模型下发** | [QingMouInfer](https://github.com/QingMouFoodDate/QingMouInfer) 提供清单 + 预签名 URL | 下载、sha256 校验、本地缓存与版本管理 |
+| **模型下发** | [TrainPlatform](https://github.com/QingMouFoodDate/TrainPlatform) 提供清单 + 预签名 URL | 下载、sha256 校验、本地缓存与版本管理 |
 | **端侧结果** | 平台零信任端 | 端侧结果**只用于现场参考**，不进入数据集与标注 |
 
 ### 两条硬性纪律
@@ -158,8 +158,8 @@ QingMouCollection/
 
 ```bash
 # 依赖：Node 20+、Watchman、Xcode / Android Studio
-git clone git@github.com:QingMouFoodDate/QingMouCollection.git
-cd QingMouCollection
+git clone git@github.com:QingMouFoodDate/MobileClient.git
+cd MobileClient
 npm install
 npm run ios      # 或 npm run android
 ```
@@ -168,14 +168,14 @@ npm run ios      # 或 npm run android
 
 ## 相关文档
 
-仓库里只放代码，产品设计与全部决策依据在 [ProjectDocs](https://github.com/QingMouFoodDate/ProjectDocs)：
+仓库里只放代码，产品设计与全部决策依据在 [ProjectPRD](https://github.com/QingMouFoodDate/ProjectPRD)：
 
 | 文档 | 内容 |
 | :--- | :--- |
-| [PLAN.md](https://github.com/QingMouFoodDate/ProjectDocs/blob/main/PLAN.md) | 产品形态 + Issue 清单 |
-| [REPOS.md](https://github.com/QingMouFoodDate/ProjectDocs/blob/main/REPOS.md) | 仓库地图与跨仓契约 |
-| [P0121](https://github.com/QingMouFoodDate/ProjectDocs/blob/main/PRD/08_端接入/P0121_RN客户端接入契约.md) | RN 客户端接入契约（20 个端点） |
-| [P0003](https://github.com/QingMouFoodDate/ProjectDocs/blob/main/PRD/01_数据采集/P0003_移动端采集与上传.md) | 移动端采集与上传 |
+| [PLAN.md](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/PLAN.md) | 产品形态 + Issue 清单 |
+| [REPOS.md](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/REPOS.md) | 仓库地图与跨仓契约 |
+| [P0121](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/PRD/08_端接入/P0121_RN客户端接入契约.md) | RN 客户端接入契约（20 个端点） |
+| [P0003](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/PRD/01_数据采集/P0003_移动端采集与上传.md) | 移动端采集与上传 |
 
 ---
 

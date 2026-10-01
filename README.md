@@ -2,7 +2,7 @@
 
 > 去现场把数据拍回来，顺便在手机上当场看看模型到底行不行。
 
-本仓是 [轻眸识刻](https://github.com/QingMouFoodDate/QingMouPRD) 的 **React Native 客户端**。
+本仓是 [轻眸识刻](https://github.com/QingMouFoodDate/ProjectDocs) 的 **React Native 客户端**。
 它是整个项目里**唯一一个会被带到现场去的软件**。
 
 ---
@@ -100,11 +100,11 @@ flowchart LR
 
 | 候选 | 说明 |
 | :--- | :--- |
-| `onnxruntime-react-native` 1.24.3 | 与 [QingMouTrain](https://github.com/QingMouFoodDate/QingMouTrain) 的 ONNX 导出链路**零改动对齐** |
+| `onnxruntime-react-native` 1.24.3 | 与 [ModelTrain](https://github.com/QingMouFoodDate/ModelTrain) 的 ONNX 导出链路**零改动对齐** |
 | `react-native-executorch` 0.10.4 | 维护最活跃（2026-09），**内置目标检测**与 YOLO 支持，但走 PyTorch → ExecuTorch（`.pte`） |
 | `react-native-fast-tflite` 3.0.1 | 体积最小，但需要额外产出 TFLite 格式 |
 
-**倾向 `onnxruntime-react-native`**：RN 与微信小程序**两端都吃 ONNX**，[QingMouTrain](https://github.com/QingMouFoodDate/QingMouTrain) 只需维护一条导出链路。少一种格式，就少一类"两端结果不一致"的 bug。最终以实测的精度与耗时为准。
+**倾向 `onnxruntime-react-native`**：RN 与微信小程序**两端都吃 ONNX**，[ModelTrain](https://github.com/QingMouFoodDate/ModelTrain) 只需维护一条导出链路。少一种格式，就少一类"两端结果不一致"的 bug。最终以实测的精度与耗时为准。
 
 ### ❌ 已排除：`react-native-background-upload`
 
@@ -168,14 +168,14 @@ npm run ios      # 或 npm run android
 
 ## 相关文档
 
-仓库里只放代码，产品设计与全部决策依据在 [QingMouPRD](https://github.com/QingMouFoodDate/QingMouPRD)：
+仓库里只放代码，产品设计与全部决策依据在 [ProjectDocs](https://github.com/QingMouFoodDate/ProjectDocs)：
 
 | 文档 | 内容 |
 | :--- | :--- |
-| [PLAN.md](https://github.com/QingMouFoodDate/QingMouPRD/blob/main/PLAN.md) | 产品形态 + Issue 清单 |
-| [REPOS.md](https://github.com/QingMouFoodDate/QingMouPRD/blob/main/REPOS.md) | 仓库地图与跨仓契约 |
-| [P0121](https://github.com/QingMouFoodDate/QingMouPRD/blob/main/PRD/08_端接入/P0121_RN客户端接入契约.md) | RN 客户端接入契约（20 个端点） |
-| [P0003](https://github.com/QingMouFoodDate/QingMouPRD/blob/main/PRD/01_数据采集/P0003_移动端采集与上传.md) | 移动端采集与上传 |
+| [PLAN.md](https://github.com/QingMouFoodDate/ProjectDocs/blob/main/PLAN.md) | 产品形态 + Issue 清单 |
+| [REPOS.md](https://github.com/QingMouFoodDate/ProjectDocs/blob/main/REPOS.md) | 仓库地图与跨仓契约 |
+| [P0121](https://github.com/QingMouFoodDate/ProjectDocs/blob/main/PRD/08_端接入/P0121_RN客户端接入契约.md) | RN 客户端接入契约（20 个端点） |
+| [P0003](https://github.com/QingMouFoodDate/ProjectDocs/blob/main/PRD/01_数据采集/P0003_移动端采集与上传.md) | 移动端采集与上传 |
 
 ---
 

@@ -5,7 +5,7 @@
 
 ---
 
-## 📱 一、 核心定位与业务价值
+## 一、 核心定位与业务价值
 
 数据是小目标检测与工业 OCR 算法的生命基石。本仓库是深入真实生活实景的**数据采集先锋与端侧试炼场**：
 
@@ -31,7 +31,7 @@ flowchart LR
 
 ---
 
-## 🏗️ 二、 推荐移动端架构参考
+## 二、 推荐移动端架构参考
 
 ```text
 MobileClient/ (推荐目录结构参考)
@@ -53,23 +53,23 @@ MobileClient/ (推荐目录结构参考)
 
 ---
 
-## 🤝 三、 跨仓契约与质量规范
+## 三、 跨仓契约与质量规范
 
 1. **上传接口规范**：严格对接 [`ProjectPRD/contracts/api_specs.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/api_specs.md) 中的 `POST /api/v1/samples/batch-upload`；
 2. **采图质量准则**：现场采图全员必须遵循 [`ProjectPRD/standards/数据采集审核与质量控制规范.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/standards/数据采集审核与质量控制规范.md)（掌握 4 项生活环境容差，严守 6 大底线红线）。
 
 ---
 
-## 🚀 四、 技术选型指南 (留给负责人的自主空间)
+## 四、 技术选型指南 (留给负责人的自主空间)
 
 - **推荐路线**：
   - `React Native` / `Flutter`（跨平台，一次开发支持 iOS 与 Android）；
   - 或 `Android 原生 (Kotlin + Jetpack CameraX)`（若重点调优相机对焦性能）；
-- 移动端负责同学可自由根据擅长技术决断，核心目标是**对焦精准、拍摄流畅、离线上传不丢数据**！
+- 移动端负责同学可自由根据擅长技术决断，核心目标是**对焦精准、拍摄流畅、离线上传不丢数据**。
 
 ---
 
-## 🏁 五、 阶段完成定义 (Definition of Done, DoD)
+## 五、 阶段完成定义 (Definition of Done, DoD)
 
 - [ ] **阶段 1 (相机调起与保存)**：成功调起手机高分辨率摄像头，拍照并妥善保存在手机本地沙盒；
 - [ ] **阶段 2 (上传打通)**：联网时成功调用后端接口将图片及包装元数据上传至后端；

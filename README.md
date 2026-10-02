@@ -1,184 +1,76 @@
-# MobileClient · 轻眸识刻采集客户端
+# MobileClient · 轻眸识刻移动端客户端
 
-> 去现场把数据拍回来，顺便在手机上当场看看模型到底行不行。
-
-本仓是 [轻眸识刻](https://github.com/QingMouFoodDate/ProjectPRD) 的 **React Native 客户端**。
-它是整个项目里**唯一一个会被带到现场去的软件**。
+> **组织归属**：`QingMouFoodDate` GitHub 组织  
+> **仓库性质**：面向超市、食堂、现场实地采图、包装元数据快捷初标与端侧推理验证的**移动端 App**  
 
 ---
 
-## 我们在做什么
+## 📱 一、 核心定位与业务价值
 
-我们想做一个「拍张照就能读出食品生产日期」的模型。
-
-这件事卡在最前面的地方很反直觉：**不是算法难，是没有数据。**
-
-你买不到「各种喷码字体、各种包装曲面、各种货架光照」的日期照片数据集。这东西不存在于任何公开数据集里，只能自己去拍——去仓库、去货架、去流水线旁边，一张一张地拍。
-
-而"去现场拍"这件事，落到具体的人身上是这样的：
-
-> 人站在货架前，一只手拿着包装盒调整角度，另一只手举着手机。仓库里没有信号，拍完的照片传不出去，只能先存在手机里。回到办公室才发现，有一半照片糊了、有三分之一拍的是同一个盒子、还有几张根本没拍到日期。
-
-这个仓就是为了让上面这句话里的每一个麻烦都不成立。
-
----
-
-## 现场是什么样的
-
-理解这个仓的设计，得先理解现场：
-
-**没网是常态，不是异常。** 地下仓库、冷库、工厂车间——这些地方经常完全没有信号。所以「拍摄」和「上传」必须是两件彻底分开的事：拍摄只管往手机本地写，上传是一个独立的后台任务，有网了自己补上去。**现场无网时必须能照常拍满一整天。**
-
-**手是占着的。** 一只手拿商品，另一只手拿手机。所以要连拍、要少点几下、要在预览画面上直接把拍摄要求画出来（"对准这个框"、"保持水平"），而不是让人去记说明书。
-
-**拍错了就是白跑一趟。** 照片糊了、反光、没拍到日期——这些当场就能判断。所以客户端要能在拍照的瞬间做基本检查，而不是等回到办公室才发现。
-
-**重复拍摄是灾难。** 同一个包装拍七张，如果这七张都进了数据集，模型会以为这个日期"特别重要"。所以服务端有幂等去重，客户端可以放心重传，不必自己判重。
-
----
-
-## 为什么用 React Native
-
-因为要同时覆盖两类现场人员，而且**两边的需求差别不大**：都是拍照、都是上传、都要在弱网下工作。写两套原生 App 意味着两倍的维护成本，而收益几乎为零。
-
-更重要的是第三件事——**端侧模型测试**。
-
-我们自己训出来的模型，到底在真实的手机摄像头下表现如何？在办公室用测试集算出来的 mAP，和在仓库里举着手机拍出来的效果，经常差得很远（光照、角度、抖动、对焦都是测试集里没有的）。
-
-所以这个客户端不只是采集工具，也是**模型的第一个真实试炼场**：模型训好 → 下发到手机 → 现场拍几张 → 当场看到框在哪、准不准。这条反馈回路越短，模型迭代越快。
-
-> 面向普通消费者的 C 端小程序在另一个仓：[WxClient](https://github.com/QingMouFoodDate/WxClient)。
-
----
-
-## 在整体架构中的位置
+数据是小目标检测与工业 OCR 算法的生命基石。本仓库是深入真实生活实景的**数据采集先锋与端侧试炼场**：
 
 ```mermaid
 flowchart LR
-    RN["本仓：RN 客户端"] -->|"① 上传采集数据<br/>分片 + 断点续传 + 离线队列"| API["TrainPlatform<br/>平台后端"]
-    API -->|"② 下发模型清单<br/>+ 预签名 URL"| RN
-    RN -->|"③ 端侧推理<br/>本地出框，验证模型"| RN
-    RN -.->|"④ 错例回传"| API
+    A["现场高清实拍<br/>(防抖与微距引导)"] --> B["包装类型快捷初标<br/>(易拉罐/瓶身/塑料袋)"]
+    B --> C["本地沙盒离线队列<br/>(无网环境照常作业)"]
+    C --> D["网络恢复批量上传<br/>(TrainPlatform 接口)"]
+    D -.-> E["端侧轻量初验<br/>(加载 ONNX 现场测模型)"]
 ```
 
-**归属判据**：跑在**手机/平板**上的逻辑属于本仓。
+### 核心功能规划
+1. **现场高清实拍与取景引导**：
+   - 提供相机微距对焦、手持防抖与高光漫反射提示；
+   - 拍摄界面提示采图合规准则（参照 [`ProjectPRD/standards/数据采集审核与质量控制规范.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/standards/数据采集审核与质量控制规范.md)）；
+2. **包装元数据极速录入**：
+   - 拍完后单手可快速勾选包装载体（易拉罐、瓶盖、软包装、纸盒）并选填背面印刷的保质期天数；
+3. **离线缓存与批量断点上传**：
+   - 地下仓库或超市弱网环境下，照片先完整暂存在手机本地存储；
+   - 检测到网络恢复后，自动调用后台任务批量上传，避免因断网遗失拍摄样本；
+4. **端侧模型现场验证 (On-Device Test)**：
+   - 支持下载轻量化 ONNX 模型，在真实货架前实拍现场看框选精度。
 
 ---
 
-## 功能范围
-
-### 一期做这些
-
-| 能力 | 说明 |
-| :--- | :--- |
-| **采集** | 拍照、连拍、录像；拍摄要求（引导框、水平线、距离提示）直接叠加在预览画面上 |
-| **元数据** | EXIF、GPS、设备型号、拍摄时间随图记录 —— 将来排查"哪些场景识别不好"全靠这些 |
-| **上传** | **分片上传 + 断点续传**；**离线队列**（本地库持久化，联网自动补传）；服务端幂等去重 |
-| **模型下发** | 从平台拉取模型清单，下载模型文件（带校验），本地缓存与版本管理 |
-| **端侧推理测试** | 加载模型、本地推理、画框叠加显示 —— **现场验证模型效果，不依赖网络** |
-| **错例回传** | 现场发现识别错的样本，一键回传平台进入待标注池 |
-
-### 一期不做这些
-
-- ❌ 大批量标注 —— 在手机上画几百个框不现实，回 Web 控制台做
-- ❌ 任何训练相关能力
-- ❌ C 端消费者功能 —— 那是 WxClient 的事
-
----
-
-## 技术栈，以及踩过的坑
-
-| 层 | 选型 | 为什么 |
-| :--- | :--- | :--- |
-| 框架 | **React Native + TypeScript** | 一套代码覆盖 iOS / Android；与平台共用 TypeScript 类型定义 |
-| 相机 | `react-native-vision-camera` **5.2.3** | 唯一能拿到实时帧处理的成熟方案，叠加引导框需要它 |
-| 本地存储 | `@op-engineering/op-sqlite` **18.2.5** | 离线队列是核心，需要可靠的本地数据库（维护活跃） |
-| 绘制 | `@shopify/react-native-skia` **2.14.0** | 预览叠加与推理结果画框，性能比普通 View 高一个量级 |
-| 端侧推理 | ⚠️ **待定**，见下 | |
-
-### ⚠️ 待定的选型：端侧推理运行时
-
-| 候选 | 说明 |
-| :--- | :--- |
-| `onnxruntime-react-native` 1.24.3 | 与 [ModelTrain](https://github.com/QingMouFoodDate/ModelTrain) 的 ONNX 导出链路**零改动对齐** |
-| `react-native-executorch` 0.10.4 | 维护最活跃（2026-09），**内置目标检测**与 YOLO 支持，但走 PyTorch → ExecuTorch（`.pte`） |
-| `react-native-fast-tflite` 3.0.1 | 体积最小，但需要额外产出 TFLite 格式 |
-
-**倾向 `onnxruntime-react-native`**：RN 与微信小程序**两端都吃 ONNX**，[ModelTrain](https://github.com/QingMouFoodDate/ModelTrain) 只需维护一条导出链路。少一种格式，就少一类"两端结果不一致"的 bug。最终以实测的精度与耗时为准。
-
-### ❌ 已排除：`react-native-background-upload`
-
-这个库曾经是后台上传的标准答案，但**自 2022 年 10 月起已停更四年**，不会跟进新的 iOS / Android 后台任务模型。不使用。
-
-后台上传需要自建：`op-sqlite` 持久化队列 + 系统级后台任务（iOS URLSession background / Android WorkManager）。
-
----
-
-## 规划目录结构
+## 🏗️ 二、 推荐移动端架构参考
 
 ```text
-MobileClient/
-├── src/
-│   ├── screens/
-│   │   ├── Capture/         # 拍摄（含引导叠加）
-│   │   ├── Upload/          # 上传队列与进度
-│   │   ├── ModelTest/       # 端侧推理测试
-│   │   └── Settings/
-│   ├── features/
-│   │   ├── camera/          # VisionCamera 封装
-│   │   ├── upload/          # 分片、续传、离线队列
-│   │   ├── inference/       # 端侧推理运行时封装（运行时待选）
-│   │   └── metadata/        # EXIF / GPS / 设备信息
-│   ├── db/                  # op-sqlite schema 与迁移
-│   ├── api/                 # 平台 API 客户端
-│   └── contracts/           # 与 TrainPlatform 共享的接口类型定义
-├── ios/  android/
-└── README.md
+MobileClient/ (推荐目录结构参考)
+├── README.md                      # 本说明文档
+├── .gitignore                     # 忽略项
+└── src/                           # 核心源码
+    ├── screens/                   # 【页面层】
+    │   ├── CameraScreen           # 现场拍照页（带辅助线、对焦与防抖提示）
+    │   ├── MetaInputScreen        # 包装类型与保质期天数快捷标记页
+    │   ├── QueueScreen            # 本地离线任务队列与上传状态页
+    │   └── TestModelScreen        # 端侧模型测试页
+    ├── services/                  # 【服务层】
+    │   ├── storage.ts             # 本地离线沙盒存储管理
+    │   ├── uploader.ts            # 后台断点续传队列调度器
+    │   └── onnx_runner.ts         # 端侧模型加载运行
+    ├── components/                # 【组件】取景辅助框、状态胶囊、快速勾选卡片
+    └── types/                     # 强类型数据模型
 ```
 
 ---
 
-## 与平台的契约
+## 🤝 三、 跨仓契约与质量规范
 
-| 契约 | 权威定义 | 本仓职责 |
-| :--- | :--- | :--- |
-| **上传链路** | [TrainPlatform](https://github.com/QingMouFoodDate/TrainPlatform)（`UploadSession` / `UploadChunk` / `ManagedFile`） | 只实现客户端，不自造协议 |
-| **幂等** | 平台侧 `(size, sha256)` 去重 | 客户端可安全重传，无需自己判重 |
-| **模型下发** | [TrainPlatform](https://github.com/QingMouFoodDate/TrainPlatform) 提供清单 + 预签名 URL | 下载、sha256 校验、本地缓存与版本管理 |
-| **端侧结果** | 平台零信任端 | 端侧结果**只用于现场参考**，不进入数据集与标注 |
-
-### 两条硬性纪律
-
-1. **离线是主路径，不是异常分支。** 拍摄只写本地库，上传是独立的后台任务；现场无网必须能正常拍摄 500 张以上。
-2. **本地存储要有配额。** 模型缓存和待传数据共用手机空间，必须分别管理，不能互相挤占——不能因为下载了一个大模型，导致今天拍的照片传不出去。
+1. **上传接口规范**：严格对接 [`ProjectPRD/contracts/api_specs.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/api_specs.md) 中的 `POST /api/v1/samples/batch-upload`；
+2. **采图质量准则**：现场采图全员必须遵循 [`ProjectPRD/standards/数据采集审核与质量控制规范.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/standards/数据采集审核与质量控制规范.md)（掌握 4 项生活环境容差，严守 6 大底线红线）。
 
 ---
 
-## 快速开始
+## 🚀 四、 技术选型指南 (留给负责人的自主空间)
 
-```bash
-# 依赖：Node 20+、Watchman、Xcode / Android Studio
-git clone git@github.com:QingMouFoodDate/MobileClient.git
-cd MobileClient
-npm install
-npm run ios      # 或 npm run android
-```
+- **推荐路线**：
+  - `React Native` / `Flutter`（跨平台，一次开发支持 iOS 与 Android）；
+  - 或 `Android 原生 (Kotlin + Jetpack CameraX)`（若重点调优相机对焦性能）；
+- 移动端负责同学可自由根据擅长技术决断，核心目标是**对焦精准、拍摄流畅、离线上传不丢数据**！
 
 ---
 
-## 相关文档
+## 🏁 五、 阶段完成定义 (Definition of Done, DoD)
 
-仓库里只放代码，产品设计与全部决策依据在 [ProjectPRD](https://github.com/QingMouFoodDate/ProjectPRD)：
-
-| 文档 | 内容 |
-| :--- | :--- |
-| [PLAN.md](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/PLAN.md) | 产品形态 + Issue 清单 |
-| [REPOS.md](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/REPOS.md) | 仓库地图与跨仓契约 |
-| [P0121](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/PRD/08_端接入/P0121_RN客户端接入契约.md) | RN 客户端接入契约（20 个端点） |
-| [P0003](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/PRD/01_数据采集/P0003_移动端采集与上传.md) | 移动端采集与上传 |
-
----
-
-## License
-
-见 [LICENSE](./LICENSE)。
+- [ ] **阶段 1 (相机调起与保存)**：成功调起手机高分辨率摄像头，拍照并妥善保存在手机本地沙盒；
+- [ ] **阶段 2 (上传打通)**：联网时成功调用后端接口将图片及包装元数据上传至后端；
+- [ ] **阶段 3 (离线队列)**：断网拍 5 张，联网后自动将 5 张完整同步至服务器。

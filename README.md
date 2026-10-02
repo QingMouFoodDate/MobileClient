@@ -20,7 +20,7 @@ flowchart LR
 ### 核心功能规划
 1. **现场高清实拍与取景引导**：
    - 提供相机微距对焦、手持防抖与高光漫反射提示；
-   - 拍摄界面提示采图合规准则（参照 [`ProjectPRD/standards/数据采集审核与质量控制规范.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/standards/数据采集审核与质量控制规范.md)）；
+   - 拍摄界面提示采图合规准则（参照 [`ProjectPRD/standards/数据质量规范.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/standards/数据质量规范.md)）；
 2. **包装元数据极速录入**：
    - 拍完后单手可快速勾选包装载体（易拉罐、瓶盖、软包装、纸盒）并选填背面印刷的保质期天数；
 3. **离线缓存与批量断点上传**：
@@ -55,8 +55,8 @@ MobileClient/ (推荐目录结构参考)
 
 ## 三、 跨仓契约与质量规范
 
-1. **上传接口规范**：严格对接 [`ProjectPRD/contracts/api_specs.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/api_specs.md) 中的 `POST /api/v1/samples/batch-upload`；
-2. **采图质量准则**：现场采图全员必须遵循 [`ProjectPRD/standards/数据采集审核与质量控制规范.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/standards/数据采集审核与质量控制规范.md)（掌握 4 项生活环境容差，严守 6 大底线红线）。
+1. **上传接口规范**：严格对接 [`ProjectPRD/contracts/API接口协议.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/API接口协议.md) 中的 `POST /api/v1/samples/batch-upload`；
+2. **采图质量准则**：现场采图全员必须遵循 [`ProjectPRD/standards/数据质量规范.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/standards/数据质量规范.md)（掌握 4 项生活环境容差，严守 6 大底线红线）。
 
 ---
 

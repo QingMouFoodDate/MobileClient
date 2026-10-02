@@ -45,19 +45,17 @@ flowchart LR
 
 ## 三、 推荐移动端架构参考
 
-目录结构除根目录关键配置文件外，仅展示文件夹及其子文件夹层级：
-
 ```text
 MobileClient/
-├── README.md
-├── pubspec.yaml / package.json
-└── src/
-    ├── screens/
-    ├── services/
-    ├── native_bridge/
-    ├── components/
-    ├── models/
-    └── database/
+├── README.md                      # 移动端说明文档与跨平台开发指引
+├── pubspec.yaml / package.json    # 移动工程跨端依赖与打包配置文件
+└── src/                           # 核心应用源码目录
+    ├── screens/                   # 取景拍摄、多图会话与结果展示页面
+    ├── services/                  # 网络会话编排、端侧推理与异步同步服务
+    ├── native_bridge/             # 相机硬件控制、手电筒与传感器防抖桥接
+    ├── components/                # 瞄准辅助框、日期卡片与通用交互组件
+    ├── models/                    # 识别会话、机器观察值与台账数据结构
+    └── database/                  # 本地离线台账与弱网上传任务队列存储
 ```
 
 ---

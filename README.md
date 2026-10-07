@@ -1,127 +1,101 @@
 # MobileClient · 轻眸识刻移动端客户端
 
-> 后续移动端规划，工程暂缓；不是 M0 前置依赖，也不是已运行客户端。
+> 前瞻性移动体验与传感器辅助设计储备，面向现场拍摄、手持防抖与离线食品台账
+>
+> **工程状态**：移动端产品与交互设计储备 · M0 优先验证 Web 核心链路 · 统一接入 InferPlatform 业务网关
 
-MobileClient 规划在 Web 在线查验能力基础上，增加现场拍摄辅助、弱网任务、本地记录与通知。所有业务 API 接入 `InferPlatform`，由平台编排会话、聚合证据并生成 Decision，内部 Inference Runtime 执行检测与 OCR；客户端不直接访问 TrainPlatform、数据库或服务端模型文件。
+MobileClient 专注于轻眸识刻系统在手持移动终端与现场查验场景的体验延伸。系统规划在 Web 核心在线查验能力的基础上，充分发挥移动设备硬件特性，引入手持稳态检测、微距对焦引导、弱网离线任务队列与本地食品台账功能；所有在线业务请求与推理能力统一接入 InferPlatform。
 
-当前主要是产品与模块设计，不能证明代码、构建、测试、部署或模型已交付。Web 的 M0 单图闭环也待实现；多图、完整展示与人工纠偏属于 C0 后续，不能因“覆盖 Web”而承诺这些功能已经可用。
+---
 
-## 一、范围与需求映射
+## 工程状态与边界说明
 
-- **FR-C2-001（后续候选、工程暂缓）**：相机与传感器拍摄辅助、弱网任务队列、本地食品记录和用户授权的本地通知。
-- **C0 接入目标（后续规划）**：复用 FR-C0-005/006 的会话展示与契约内纠偏，消费 FR-C0-002 至 004 的服务端输出；FR-C0-001 是训练/评测数据准入，不是普通拍照上传职责。多图属于 C0，不重分类为移动端 C2。
-- **FR-C3-001（远期探索）**：量化模型与端侧推理评估，需具备授权数据、合规模型来源、可用模型产物、目标设备与实际验证条件，不能脱离这些前提承诺离线识别或性能。
+- **当前阶段**：系统处于架构规范与 M0 核心原型攻坚阶段，当前阶段优先推进 Web 核心主链路验证，本仓作为移动端设计储备同步演进；
+- **实现范围**：M0 阶段聚焦产品原型定义与原生传感器适配方案设计；端侧轻量化模型推理（FR-C3-001）属于远期演进探索，不作为当前交付约束；
+- **契约基准**：数据交互与通信规约严格绑定上位 [API.md](../ProjectPRD/contracts/API.md)、[DATA.md](../ProjectPRD/contracts/DATA.md) 与 [openapi.json](../ProjectPRD/contracts/openapi.json)。
 
-项目保持 **8 仓：7 个项目仓 + `.github` 组织配置仓**。Inference Runtime 是 InferPlatform 内部逻辑模块，不是第 9 仓。MobileClient、WxClient 的工程暂缓不影响优先验证 Web M0；跨端授权、同步与继续处理的任务契约尚未实现，不承诺无缝迁移会话。
+---
 
-系统只呈现食品包装**标示状态**，不作食品安全或可食用保证，不把性能目标写成实测能力。
+## 一、核心定位与移动端特色
 
-## 二、规划路径与移动端模块
+### 1. 核心负责内容
+
+- **现场拍摄辅助**：利用设备陀螺仪与加速度传感器感知手持微抖态，结合局部模糊度检测提供实时对焦与平稳握持指引；
+- **动态瞄准引导**：提供针对包装局部喷码的智能瞄准框、微距变焦提示与补光引导，提升首拍成像质量；
+- **弱网任务队列**：在商超地库或弱网环境下，支持本地拍摄任务持久化挂起，待网络恢复后自动触发幂等重试；
+- **本地食品台账**：支持在用户授权下保存必要的查验记录与标示结论，提供到期日程提醒的本地化配置能力。
+
+### 2. 系统协作与设计约束
+
+- **在线中枢解耦**：不直接访问底层数据库或离线模型文件，所有会话创建、图像分析与语义推导统一托管至 InferPlatform；
+- **法定标示受限**：系统严格推导并呈现食品包装标示状态，不替代食品安全检测，界面严禁给出食品绝对可食用等卫生保证；
+- **端侧探索中立**：远期端侧轻量化模型仅作为弱网环境下的候选观察辅助，最终决策与证据链条仍以服务端权威输出为准。
+
+---
+
+## 二、移动端交互主流程架构
 
 ```mermaid
 flowchart TD
-    A[拍摄或选择图片] --> B[可选稳定性与清晰度提示]
-    B --> C[持久化待上传任务]
-    C --> D{网络可用且用户允许上传}
-    D -->|是| E[创建会话并幂等上传]
-    D -->|否| F[保留任务并提示待重试]
-    F --> D
-    E --> G[查看服务端证据与 Decision]
-    E -.失败或结果不确定.-> F
-    G --> H[用户选择保存必要本地记录]
-    H --> I[确认服务端标示日期后可选本地通知]
+    A["现场启动相机瞄准包装"] --> B["传感器检测手持稳定性与对焦"]
+    B --> C["拍摄包装清晰特写图像"]
+    C --> D{"检测当前网络连通性"}
+    D -->|网络正常| E["创建会话并幂等上传至 InferPlatform"]
+    D -->|弱网环境| F["持久化写入本地离线任务队列"]
+    F -->|网络恢复| E
+    E --> G["获取服务端 Evidence 与 Decision DTO"]
+    G --> H["双重视图呈现标示状态与复核指引"]
+    H --> I["用户授权后保存至本地食品台账"]
+    I --> J["依据标示期限可选设置系统本地提醒"]
 ```
 
-上述是后续交互目标，不代表后台持续执行、同步或通知已经实现。
+---
 
-### 拍摄辅助
+## 三、原生能力与用户体验设计
 
-- 结合陀螺仪、加速度与图像清晰度提示手持稳定性和重新对焦；仅作辅助，不伪造识别结果。
-- 规划瞄准框、变焦、补光与微距引导，实际可用性由设备、操作系统和权限决定。
-- 不支持传感器、相机权限拒绝或拍摄辅助失败时，保留相册选择/手动拍摄路径，不以稳定性评分强制阻止提交。
-- 多角度补拍接入 C0 多图契约后再实现，不将其作为 M0 依赖。
+1. **传感器稳态感知**：通过设备原生传感器计算实时角速度与重力矢量变化，在手持剧烈晃动或光照不足时给出友好提示，从源头降低运动模糊对 OCR 的干扰。
+2. **离线任务生命周期**：本地队列严格保留每一次请求的 `Idempotency-Key` 与原始图像指纹，避免弱网重试时产生重复服务端资源；用户可随时手动管理、重试或清理挂起任务。
+3. **本地隐私台账**：本地食品记录以受控 SQLite 或加密键值对存储，不上传未获授权的个人相册信息；台账清晰标注缓存时间，不伪造服务端最新状态。
 
-### 弱网任务与本地记录
+---
 
-以下仅为提议的本地 UX/任务状态，不新增服务端枚举：
+## 四、上位接口契约映射
 
-```text
-PENDING -> CREATING_SESSION -> UPLOADING -> PROCESSING -> SUCCEEDED
-网络不可用 -> WAITING_NETWORK
-超时或结果不确定 -> RETRY_REQUIRED
-明确失败 -> FAILED
-```
+移动端在线交互完全复用 InferPlatform 提供的标准 API 契约：
 
-- 上传前持久化任务、必要图片引用、请求和幂等键；同一创建/上传/纠偏操作重试复用同一个 `Idempotency-Key`，不重复创建资源。
-- 网络恢复后按用户设置继续；失败、应用中断或结果不确定时不静默丢失任务，提供查看、重试、取消与删除入口。
-- 只有 HTTP 和业务响应均成功才标为成功；超时保留待确认状态，按契约重试或查询确认，不猜测完成。
-- 本地记录按用户授权保存必要的服务端结果与版本、来源；离线查看明确标出缓存时间，不冒充最新服务端决策。不依赖尚未定义的跨端同步或摘要 API。
-- 用户可清理本地图片、记录与任务；系统后台限制、断网或权限撤销时明确提示，不保证任务持续运行。
-
-### 本地通知
-
-只依据**服务端返回且经用户确认的标示日期**安排用户授权的本地通知；信息缺失、证据冲突或低置信度时不创建确定性期限提醒。服务端 Decision 更新后需重新确认并处理旧提醒。通知被关闭或系统抑制时不保证送达；不重算日期规则、临期状态或剩余天数来改变业务结果。服务端订阅与跨端提醒任务契约尚未实现，不承诺云端提醒或多端同步。
-
-## 三、结果、纠偏与错误边界
-
-平台返回完整、版本化 Observation、Evidence、Decision **安全 DTO**，客户端展示检测框、OCR、证据关联、服务端日期与状态，不访问内部路径或凭证。机器 Observation 来自 Runtime，不由客户端提交或改写；端侧探索结果也不能冒充这份服务端机器结果。界面可以简化，但服务端摘要响应需未来单独契约。
-
-- 标示状态统一为：在期 `WITHIN_MARKED_PERIOD`、临期 `NEAR_EXPIRY`、超期 `PAST_MARKED_PERIOD`、无法判定 `UNDETERMINED`。
-- 复核状态统一为：证据完备 `EVIDENCE_COMPLETE`、信息缺失 `INFORMATION_MISSING`、证据冲突 `EVIDENCE_CONFLICT`、低置信度 `LOW_CONFIDENCE`。
-- 两种状态独立展示，结合文字、图标与颜色。**推理失败不是 `UNDETERMINED`**，网络/推理失败不显示 success 或伪造业务结果。
-- 客户端不推导到期日、临期阈值或重算业务结果；保存条件等包装说明只是条件提示。
-- 原图裁剪、校正、增强、OCR 输入图等 `variants` 为后续可选对照，不能假定当前 API 已提供对应字段或地址。
-
-C0 纠偏待实现：当前 `correction.v1` 允许 `mfg_date`、`exp_date`、`shelf_life`（`value` + `unit`，单位 `DAY` / `MONTH` / `YEAR`）及 `storage_condition`；原始 OCR 文本与检测框修正仍在规划，尚未在 v1 定义，不能宣称可提交。合法纠偏接受后立即更新当前 Decision，失败时保留输入但不显示成功；训练候选另需 TrainPlatform 质量审核，不直接更新线上模型。
-
-图片格式/大小/质量错误、会话或令牌失效、上传失败、推理超时和存储空间不足应给出具体下一步。证据缺失或冲突是复核提示，不等同于基础设施失败。
-
-## 四、InferPlatform 接口与端侧探索
-
-以下是契约接入目标，不代表 API 或客户端已经上线：
-
-| 阶段 | 方法与路径 | 用途 |
+| 功能模块 | 对应接口与方法 | 职责说明 |
 | :--- | :--- | :--- |
-| 后续在线接入 | `POST /api/v1/sessions` | 创建会话，返回 `session_id`、`session_token` |
-| 后续在线接入 | `POST /api/v1/sessions/{session_id}/images` | 上传图片并获取平台处理结果 |
-| 后续在线接入 | `GET /api/v1/sessions/{session_id}` | 获取完整版本化安全 DTO |
-| C0 后续接入 | `POST /api/v1/sessions/{session_id}/correction` | 提交契约内纠偏 |
-| C3 仅 Mobile | `GET /api/v1/models/latest` | 查询端侧模型元数据，非在线识别前置条件 |
+| **会话管理** | `POST /api/v1/sessions` | 初始化移动查验会话，获取受控临时凭据 |
+| **图像上传** | `POST /api/v1/sessions/{session_id}/images` | 结合幂等键上传清晰图像，获取流水线处理结果 |
+| **结果同步** | `GET /api/v1/sessions/{session_id}` | 轮询或拉取完整版本化安全 DTO |
+| **字段纠偏** | `POST /api/v1/sessions/{session_id}/correction` | 提交包装日期或保质期人工修正（C0 阶段） |
+| **端侧探索** | `GET /api/v1/models/latest` | 查询最新端侧候选轻量化模型元数据（C3 远期探索） |
 
-创建后的会话请求使用 `Authorization: Bearer <session_token>`；写操作携带 `Idempotency-Key`，新操作使用新键。生产使用 HTTPS，令牌采用平台安全存储与受控生命周期，不分享、不写日志、不放 URL，不以令牌绕过访问控制。模型访问鉴权和下载按 API/MODEL 契约，不自行假定会话令牌可访问所有模型。
+---
 
-端侧探索需验证模型版本、设备/运行时兼容性、授权和 SHA-256；保留可用旧模型，失败不覆盖。设备算力不足、模型不可用、推理异常或需复核时，用户允许且联网后回退云端，否则保留任务并提示稍后重试。端侧只提供探索性的候选观察或离线辅助，不能替代统一 Evidence/Decision；候选提交协议未定义前，不向在线接口提交 Observation。性能与精度结论必须来自授权数据和目标设备实测。
+## 五、提议工程目录结构
 
-## 五、设备权限、隐私与可访问性
-
-- 按需说明并申请相机、相册、传感器、通知与后台任务相关权限，尊重系统及用户设置，不保证所有设备提供相同能力。
-- 权限被拒绝时提供手动选图、关闭通知、手动重试等替代路径；模型或网络失败不阻断已授权本地记录的查看。
-- 上传前说明用途与契约限制；本地图片、记录、待同步任务、缓存和模型均可由用户清理，令牌不混入可导出记录。
-- 日志不记录原始图片、完整 OCR、令牌或不必要的个人信息；端侧缓存与模型不能绕过权限和服务端访问控制。
-- 状态卡片支持大字、高对比度和文字图标，拍摄、重试与通知设置保持清晰可操作。
-
-## 六、提议工程结构与技术候选
-
-以下为逐行注释的建议结构，不代表当前存在相应工程：
+以下为移动端客户端仓库的建议目录布局，遵循现代移动跨平台架构规范：
 
 ```text
-MobileClient/                      # 移动端规划仓库
-├── README.md                      # 阶段、模块与契约入口
-├── pubspec.yaml / package.json    # 按最终框架选择依赖文件，并非同时必需
-└── src/                           # 客户端源码（按框架调整）
-    ├── screens/                   # 拍摄、任务、结果与本地记录页面
-    ├── services/                  # API 鉴权、幂等上传与 C3 推理适配
-    ├── native_bridge/             # 相机、传感器、权限和本地通知桥接
-    ├── components/                # 拍摄引导与统一状态卡片
-    ├── models/                    # 版本化 DTO、用户记录与任务类型
-    ├── secure_storage/            # 会话令牌的安全存取与清理
-    └── database/                  # 授权本地记录、图片引用及持久任务队列
+MobileClient/                      # 移动端客户端仓库
+├── README.md                      # 移动端定位与契约指引
+├── pubspec.yaml                   # 移动端跨平台依赖配置文件
+└── src/                           # 移动端源码核心目录
+    ├── screens/                   # 拍摄查验与结果呈现页面
+    ├── services/                  # 在线 API 通信与任务调度
+    ├── native_bridge/             # 设备传感器与系统权限适配
+    ├── components/                # 动态瞄准框与状态通用组件
+    ├── models/                    # 数据传输对象与实体结构
+    ├── secure_storage/            # 会话凭证安全隔离与清理
+    └── database/                  # 本地离线台账与持久化队列
 ```
 
-Flutter、Uni-app x、Kotlin Multiplatform 或多端原生均为候选，按目标设备、相机/传感器能力和维护成本选型；本地数据库方案随框架确定，不作现成实现承诺。
+---
 
-## 七、事实源与相关文档
+## 六、权威依据与参考文档
 
-统一以 [ProjectPRD README](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/README.md)、[REQUIREMENTS](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/REQUIREMENTS.md)、[ARCHITECTURE](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/ARCHITECTURE.md) 为产品与职责依据；以 [API](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/API.md)、[DATA](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/DATA.md)、[DATE_RULES](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/DATE_RULES.md)、[MODEL](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/MODEL.md)、[TRAINING](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/TRAINING.md) 为契约依据；仓库边界见 [ADR-001](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/decisions/ADR-001-REPOSITORY_BOUNDARIES.md)。
-
-DATE_RULES、TRAINING、ADR-001、OpenAPI 与四份 JSON Schema 已纳入 ProjectPRD，均仍为候选或设计依据；本仓只引用，不重复定义。当前 GitHub 仓库为 private，链接需要相应访问权限，不保证所有访客可访问；规划与契约不等同于已交付能力。
+- **系统设计与规划**：[ProjectPRD/REQUIREMENTS.md](../ProjectPRD/REQUIREMENTS.md) · [ProjectPRD/ARCHITECTURE.md](../ProjectPRD/ARCHITECTURE.md) · [ProjectPRD/ROADMAP.md](../ProjectPRD/ROADMAP.md)
+- **跨仓技术契约**：[contracts/API.md](../ProjectPRD/contracts/API.md) · [contracts/DATA.md](../ProjectPRD/contracts/DATA.md) · [contracts/openapi.json](../ProjectPRD/contracts/openapi.json)
+- **规则与决策记录**：[contracts/DATE_RULES.md](../ProjectPRD/contracts/DATE_RULES.md) · [decisions/ADR-001-REPOSITORY_BOUNDARIES.md](../ProjectPRD/decisions/ADR-001-REPOSITORY_BOUNDARIES.md)
+- **工程与质量规范**：[standards/ENGINEERING.md](../ProjectPRD/standards/ENGINEERING.md)

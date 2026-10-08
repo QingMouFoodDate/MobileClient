@@ -154,15 +154,20 @@ flowchart LR
 
 在用户授权后，客户端可以保存会话摘要、识别结果和用户确认的标示日期。具体存储实现可采用 SQLite、Room、Core Data 或跨平台数据库；本地记录不改变服务端决策结果。
 
-上传任务至少区分以下状态：
+上传任务状态迁移链路如下：
 
-```text
-PENDING
-UPLOADING
-SUCCEEDED
-FAILED
-RETRY_REQUIRED
+```mermaid
+stateDiagram-v2
+    [*] --> PENDING: 本地创建任务
+    PENDING --> UPLOADING: 网络连通发起上传
+    UPLOADING --> SUCCEEDED: 云端识别推导完成
+    UPLOADING --> RETRY_REQUIRED: 弱网中断或请求超时
+    RETRY_REQUIRED --> UPLOADING: 网络恢复自动重试
+    UPLOADING --> FAILED: 格式校验或不可恢复错误
+    SUCCEEDED --> [*]
+    FAILED --> [*]
 ```
+
 
 网络恢复后是否自动上传由用户设置决定。失败任务不得静默丢失，应支持查看、重试和删除，并使用幂等标识避免重复创建会话。
 

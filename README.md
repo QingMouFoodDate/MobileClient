@@ -1,12 +1,14 @@
 # MobileClient · 轻眸识刻移动端客户端
 
 > 面向日常消费和现场巡检场景的移动端客户端规划
+>
+> **工程状态**：移动端暂缓实现 · Web M0 待实现
 
 MobileClient 规划覆盖 WebClient 的在线识别、结果展示、证据查看和人工纠偏能力，并在此基础上提供移动设备专属的拍摄辅助、弱网任务、本地记录和端云协同能力。客户端通过统一 HTTP API 对接 `InferPlatform`；InferPlatform 编排会话和日期语义推导，调用 Inference Runtime 执行云端模型推理。
 
 ## 当前状态
 
-MobileClient 属于移动端扩展方向，当前以产品范围和后续实现规划为主，不作为 M0 最小闭环的前置依赖。当前仓库主要包含规划文档，不代表已有可运行移动端；具体功能以实际代码、构建和测试记录为准。
+MobileClient 属于移动端扩展方向，当前暂缓实现，以产品范围和后续规划为主，不作为 M0 最小闭环的前置依赖。当前仓库主要包含规划文档，恢复实施时单独评审范围和资源。
 
 ---
 
@@ -33,9 +35,9 @@ MobileClient 规划面向以下典型场景：
 | 相机、相册和拍摄引导 | 客户端负责实现 | 不负责底层硬件 |
 | 清晰度和手持稳态提示 | 客户端计算提示 | 不负责物理传感器 |
 | 会话创建、图片上传 | 调用统一接口 | 提供 API 网关并编排会话 |
-| 云端检测与 OCR | 接收 Observation 展示 | 调用 Inference Runtime 执行模型 |
-| 日期语义推导与决策 | 接收 Decision 展示 | 依据上位日期规则执行计算 |
-| 本地离线食品台账 | 按用户授权保存 | 提供数据同步支撑 |
+| 云端检测与 OCR | 接收完整 Observation 展示 | 调用 Inference Runtime 执行模型 |
+| 日期语义推导与决策 | 接收 Evidence 与 Decision 展示 | 依据上位日期规则执行计算 |
+| 本地离线食品台账 | 按用户授权保存 | 同步接口待评审 |
 | 字段级人工纠偏 | 发起提交并更新视图 | 保存纠偏记录并即时重算决策 |
 | 边缘轻量推理探索 | 规划端侧离线模型适配 | 维护候选模型元数据 |
 
@@ -45,17 +47,17 @@ MobileClient 规划面向以下典型场景：
 
 ## 二、在线能力与移动端适配
 
-MobileClient 覆盖 WebClient 的在线能力，并针对移动设备调整交互方式：
+MobileClient 规划覆盖 WebClient 的在线能力，并针对移动设备调整交互方式：
 
 | 能力 | 移动端要求 |
 | :--- | :--- |
-| 会话与识别 | 创建、恢复会话，上传一张或多张图片并查看处理状态 |
+| 会话与识别 | 创建或继续会话，上传图片并查看处理状态；多图追加按 C0 推进 |
 | 结果与证据 | 查看检测框、OCR、置信度、日期字段、复核状态和多图时间线 |
-| 图像辅助 | 查看原图、裁剪图、校正图和增强图，对缺失或低质量区域补拍 |
-| 补录与纠偏 | 按 API 契约补录字段、修改文本或检测框，并查看重新计算结果 |
-| 数据关系 | 保留机器观察值、结构化证据、人工修正和最终决策的对应关系 |
+| 图像辅助 | 查看原图与日期区域，对缺失或低质量区域补拍 |
+| 补录与纠偏 | 按 API 契约补录或修正日期、保质期、储存条件，并查看重新计算结果 |
+| 数据关系 | 保留完整的机器观察值 Observation、结构化证据 Evidence、人工修正和最终决策 Decision 的对应关系 |
 
-这些能力与 WebClient 共用会话、结果和纠偏接口；未写入 API 契约的字段或纠偏类型不得提前接入，日期决策规则不在客户端重复实现。
+这些能力与 WebClient 共用会话、结果和纠偏接口，日期决策规则不在客户端重复实现。当前 `correction.v1` 仅支持 `mfg_date`、`exp_date`、`shelf_life`、`storage_condition`；完整 C0 的 OCR 原文/bbox 纠偏，以及裁剪、校正、增强图变体展示尚未定义在线契约，须先评审。
 
 ---
 
@@ -64,7 +66,7 @@ MobileClient 覆盖 WebClient 的在线能力，并针对移动设备调整交�
 ```mermaid
 flowchart LR
     A["拍摄或选择图片"] --> B["清晰度与稳定性提示"]
-    B --> C["创建或恢复识别会话"]
+    B --> C["开始或继续识别"]
     C --> D["上传图片并获取结果"]
     D --> E["查看标示状态"]
     E --> F{"是否需要补充或复核"}
@@ -73,19 +75,21 @@ flowchart LR
     H --> I["提交修正并更新结果"]
 ```
 
+新增图片在 M0 中需新建会话，C0 再支持向原会话追加。
+
 ---
 
 ## 四、功能分级
 
 本仓库不重新定义需求等级；以下章节只说明客户端映射，等级和状态以
-[`需求规格.md`](../ProjectPRD/需求规格.md)
+[`需求规格.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/需求规格.md)
 中的需求 ID 为准。
 
 ### 1. FR-C0-001 至 FR-C0-006：移动端接入目标
 
 - 覆盖上表所列 WebClient 在线能力；
 - 调起相机或选择图片；
-- 在移动设备上创建、恢复和查看识别会话；
+- 在移动设备上创建、继续和查看识别会话；
 - 展示检测框、OCR 结果、证据详情、标示状态和复核提示；
 - 支持补拍、契约已定义的补录、人工纠偏和纠偏后的结果更新；
 - 在联网条件下完成云端识别。
@@ -109,7 +113,7 @@ flowchart LR
 - 端云推理分流和量化模型更新；
 - 已有记录的离线查看。
 
-端侧模型不可用、更新失败或设备算力不足时，应回退到云端识别或提示用户稍后重试。
+端侧模型不可用、更新失败或设备算力不足时，联网并经用户选择可改用云端识别；离线时可保留任务稍后再试。
 
 ---
 
@@ -119,7 +123,7 @@ flowchart LR
 | :--- | :---: | :---: | :---: |
 | 单图识别 | M0 目标 | 后续规划 | 后续规划 |
 | 多图识别会话 | C0 规划 | C0 规划 | 后续规划 |
-| 检测框、OCR 和置信度查看 | C0 规划 | C0 规划 | 结果摘要规划 |
+| 检测框、OCR 和置信度查看 | M0 目标 | C0 规划 | 结果摘要规划 |
 | 局部图像和证据查看 | C0 规划 | C0 规划 | 结果摘要规划 |
 | 人工纠偏 | C0 规划 | C0 规划 | 后续规划 |
 | 相机实时取景辅助 | 后续规划 | 后续规划 | 受微信能力限制 |
@@ -152,26 +156,27 @@ flowchart LR
 
 ### 2. 本地记录、弱网与通知
 
-在用户授权后，客户端可以保存会话摘要、识别结果和用户确认的标示日期。具体存储实现可采用 SQLite、Room、Core Data 或跨平台数据库；本地记录不改变服务端决策结果。
+在用户授权后，客户端可以保存会话摘要、识别结果和用户确认的标示日期。具体存储实现可采用 SQLite、Room、Core Data 或跨平台数据库；本地记录不改变服务端决策结果。离线查看既有结果时标明服务端观察时刻 `observed_at`，不按当前设备时间重算标示状态。
 
 上传任务状态迁移链路如下：
 
 ```mermaid
 stateDiagram-v2
     [*] --> PENDING: 本地创建任务
-    PENDING --> UPLOADING: 网络连通发起上传
+    PENDING --> UPLOADING: 网络可用且用户允许上传
     UPLOADING --> SUCCEEDED: 云端识别推导完成
     UPLOADING --> RETRY_REQUIRED: 弱网中断或请求超时
-    RETRY_REQUIRED --> UPLOADING: 网络恢复自动重试
+    RETRY_REQUIRED --> SUCCEEDED: 查询确认原操作已成功
+    RETRY_REQUIRED --> UPLOADING: 确认未完成后按用户设置重试
     UPLOADING --> FAILED: 格式校验或不可恢复错误
     SUCCEEDED --> [*]
     FAILED --> [*]
 ```
 
 
-网络恢复后是否自动上传由用户设置决定。失败任务不得静默丢失，应支持查看、重试和删除，并使用幂等标识避免重复创建会话。
+网络恢复后是否自动上传由用户设置决定。超时先查询原操作结果，仍在处理中则等待，确认未完成后才按用户设置重试。创建、上传和纠偏重试复用原 `Idempotency-Key` 与原内容，换图或改值才生成新键。失败任务不得静默丢失，应支持查看、重试和删除。
 
-通知只能依据服务端返回且经用户确认的标示日期创建。信息缺失、证据冲突或低置信度时，不创建确定性期限提醒。用户可以关闭通知，通知内容不构成食品安全结论。
+通知只能依据服务端返回且经用户确认的标示日期创建。结果仍待处理、技术失败、信息缺失、证据冲突或低置信度时，不创建确定性期限提醒。用户可以关闭通知，通知内容不构成食品安全结论。
 
 ---
 
@@ -181,19 +186,23 @@ stateDiagram-v2
 
 - 创建会话：`POST /api/v1/sessions`
 - 上传图片并执行增量识别：`POST /api/v1/sessions/{session_id}/images`
-- 获取会话结果：`GET /api/v1/sessions/{session_id}`
+- 获取完整版本化 Observation、Evidence 与 Decision：`GET /api/v1/sessions/{session_id}`
 - 提交人工纠偏：`POST /api/v1/sessions/{session_id}/correction`
-- 查询最新模型元数据：`GET /api/v1/models/latest`
+- 查询最新模型元数据：`GET /api/v1/models/latest`（C3 预留，读取授权另行评审）
+
+查询、上传和纠偏使用短期不透明 `session_token` 作为 Bearer 凭据，校验会话与图片归属；GET 不返回令牌。已有会话仅在凭据仍有效时继续使用，凭据遗失时需新建会话。
 
 端侧模型接入需满足：
 
-- 下载前检查版本、设备能力和模型兼容性；
-- 下载后校验服务端返回的 SHA-256；
-- 保留可用的旧模型，更新失败时不覆盖；
-- 推理异常或置信度不足时回退云端；
-- 不在客户端重复实现日期决策规则。
+- 下载前检查版本、设备能力、Runtime 兼容性和目标平台；
+- 成套下载检测/OCR 权重、预后处理配置、字典、`labels.json` 与 `manifest.json`，校验包及清单内文件的 SHA-256；
+- 保留可用的旧模型包，下载或校验失败时不覆盖；
+- 推理异常或置信度不足时提示用户复核，并在联网条件下由用户选择云端识别；
+- 端侧仅生成候选 Observation，不在客户端实现 Evidence 聚合与日期 Decision。
 
-接口字段、响应结构、错误码和状态枚举以 [`contracts/API.md`](../ProjectPRD/contracts/API.md) 和 [`contracts/MODEL.md`](../ProjectPRD/contracts/MODEL.md) 为准。
+端云 Observation 回传协议尚未定义，接入前先评审。
+
+接口字段、响应结构、错误码和状态枚举以 [`contracts/API.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/API.md) 和 [`contracts/MODEL.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/MODEL.md) 为准。
 
 ---
 
@@ -229,18 +238,18 @@ MobileClient/
 - 本地图片、会话记录和待同步任务由用户控制；
 - 支持清理本地图片、缓存、模型和失败任务；
 - 上传、查询、纠偏和模型下载使用 HTTPS；
-- 前端日志不得记录原始图片、完整识别文本或其他不必要的敏感信息；
+- 前端日志不得记录会话凭据、原始图片、完整识别文本或其他不必要的敏感信息；
 - 端侧模型和缓存不应绕过系统权限或服务端访问控制。
 
 ---
 
 ## 十一、相关文档
 
-- [系统需求](../ProjectPRD/需求规格.md)
-- [系统架构](../ProjectPRD/系统架构.md)
-- [开发路线](../ProjectPRD/开发路线.md)
-- [API 接口契约](../ProjectPRD/contracts/API.md)
-- [数据模型](../ProjectPRD/contracts/DATA.md)
-- [模型交付规约](../ProjectPRD/contracts/MODEL.md)
-- [日期推导规则](../ProjectPRD/contracts/日期推导规则.md)
-- [工程协作指南](../ProjectPRD/standards/工程协作指南.md)
+- [系统需求](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/需求规格.md)
+- [系统架构](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/系统架构.md)
+- [开发路线](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/开发路线.md)
+- [API 接口契约](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/API.md)
+- [数据模型](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/DATA.md)
+- [模型交付规约](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/MODEL.md)
+- [日期推导规则](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/日期推导规则.md)
+- [工程协作指南](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/standards/工程协作指南.md)

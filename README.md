@@ -152,6 +152,8 @@ flowchart LR
 
 拍摄辅助只提供建议，不应阻止用户保存或提交图片。设备不支持传感器、摄像头能力或相关权限被拒绝时，应提供手动选图等替代路径。
 
+后续可接入“证据驱动自适应识读与选择性复核”研究候选：根据服务端返回的疑问和处理建议引导重试、换角度或补拍，比较成功查验时间与人工介入成本。处理动作和有效性仍待实验验证，不保证补拍或云端识别必然改善结果。
+
 ---
 
 ### 2. 本地记录、弱网与通知
@@ -178,6 +180,8 @@ stateDiagram-v2
 
 通知只能依据服务端返回且经用户确认的标示日期创建。结果仍待处理、技术失败、信息缺失、证据冲突或低置信度时，不创建确定性期限提醒。用户可以关闭通知，通知内容不构成食品安全结论。
 
+新日期口径使用可靠直接到期日比较期限，缺生产日期不自动阻断在期结果；M0 固定天数临期默认候选 30 天，具体配置以服务端为准。起算未知不在设备上推算；直接与派生值差一天或生产/到期同日，按返回依据和复核提示展示，不自行认定错误。
+
 ---
 
 ## 七、云端接口与端侧模型
@@ -200,7 +204,7 @@ stateDiagram-v2
 - 推理异常或置信度不足时提示用户复核，并在联网条件下由用户选择云端识别；
 - 端侧仅生成候选 Observation，不在客户端实现 Evidence 聚合与日期 Decision。
 
-端云 Observation 回传协议尚未定义，接入前先评审。
+端云 Observation 回传协议尚未定义，接入前先评审。在线日期结果拟按统一升级后的 decision.v2 接入，保留 calculation_profile_id 对不可变计算依据与配置的引用；Observation、Evidence、Correction 仍沿用各自 v1，新旧 Decision 不混用载荷，离线旧结果仍保留原版本与观察时刻。
 
 接口字段、响应结构、错误码和状态枚举以 [`contracts/API.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/API.md) 和 [`contracts/MODEL.md`](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/MODEL.md) 为准。
 
@@ -253,3 +257,4 @@ MobileClient/
 - [模型交付规约](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/MODEL.md)
 - [日期推导规则](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/contracts/日期推导规则.md)
 - [工程协作指南](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/standards/工程协作指南.md)
+- [研究现状](https://github.com/QingMouFoodDate/ProjectPRD/blob/main/references/研究现状.md)
